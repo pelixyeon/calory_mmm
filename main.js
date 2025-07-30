@@ -5,7 +5,8 @@ const GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1beta/models/
 // 사진 촬영/갤러리 버튼
 const cameraBtn = document.getElementById('camera-btn');
 const galleryBtn = document.getElementById('gallery-btn');
-const fileInput = document.getElementById('file-input');
+const cameraInput = document.getElementById('camera-input');
+const galleryInput = document.getElementById('gallery-input');
 const previewSection = document.getElementById('preview-section');
 const previewCanvas = document.getElementById('preview-canvas');
 const resultSection = document.getElementById('result-section');
@@ -16,13 +17,14 @@ const copyBtn = document.getElementById('copy-btn');
 const retryBtn = document.getElementById('retry-btn');
 const loadingDiv = document.getElementById('loading');
 
-cameraBtn.onclick = () => fileInput.click();
-galleryBtn.onclick = () => fileInput.click();
+cameraBtn.onclick = () => cameraInput.click();
+galleryBtn.onclick = () => galleryInput.click();
 
 retryBtn.onclick = () => {
   previewSection.style.display = 'none';
   resultSection.style.display = 'none';
-  fileInput.value = '';
+  cameraInput.value = '';
+  galleryInput.value = '';
 };
 
 copyBtn.onclick = function() {
@@ -32,66 +34,68 @@ copyBtn.onclick = function() {
     .catch(() => alert('복사에 실패했습니다. 브라우저 권한을 확인하세요.'));
 };
 
-fileInput.onchange = function(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(ev) {
-    const img = new Image();
-    img.onload = function() {
-      const ctx = previewCanvas.getContext('2d');
-      previewCanvas.width = img.width;
-      previewCanvas.height = img.height;
-      ctx.drawImage(img, 0, 0);
-      previewSection.style.display = 'block';
-      // base64 변환
-      const base64 = previewCanvas.toDataURL('image/jpeg').split(',')[1];
-      // Gemini API 호출
-      loadingDiv.style.display = 'block';
-      fetch(GEMINI_API_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                { text: "이 이미지는 어떤 음식이고, 각 음식의 예상 칼로리를 항목별로 bullet 형태로 알려줘. 예시: 김치찌개 1인분 - 약 320kcal" },
-                { inlineData: { mimeType: "image/jpeg", data: base64 } }
-              ]
-            }
-          ]
+[cameraInput, galleryInput].forEach(input => {
+  input.onchange = function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      const img = new Image();
+      img.onload = function() {
+        const ctx = previewCanvas.getContext('2d');
+        previewCanvas.width = img.width;
+        previewCanvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        previewSection.style.display = 'block';
+        // base64 변환
+        const base64 = previewCanvas.toDataURL('image/jpeg').split(',')[1];
+        // Gemini API 호출
+        loadingDiv.style.display = 'block';
+        fetch(GEMINI_API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  { text: "이 이미지는 어떤 음식이고, 각 음식의 예상 칼로리를 음식명과 칼로리만 bullet 형태로 알려줘. 예시: - 김치찌개 1인분 - 320kcal" },
+                  { inlineData: { mimeType: "image/jpeg", data: base64 } }
+                ]
+              }
+            ]
+          })
         })
-      })
-      .then(res => res.json())
-      .then(data => {
-        loadingDiv.style.display = 'none';
-        let text = "";
-        try {
-          text = data.candidates[0].content.parts[0].text;
-        } catch {
-          text = "결과를 불러오지 못했습니다.";
-        }
-        const { items, total } = parseGeminiResult(text);
-        // 결과 표시
-        resultList.innerHTML = "";
-        items.forEach(item => {
-          const li = document.createElement('li');
-          li.textContent = `${item.name} - ${item.kcal}`;
-          resultList.appendChild(li);
+        .then(res => res.json())
+        .then(data => {
+          loadingDiv.style.display = 'none';
+          let text = "";
+          try {
+            text = data.candidates[0].content.parts[0].text;
+          } catch {
+            text = "결과를 불러오지 못했습니다.";
+          }
+          const { items, total } = parseGeminiResult(text);
+          // 결과 표시
+          resultList.innerHTML = "";
+          items.forEach(item => {
+            const li = document.createElement('li');
+            li.textContent = `${item.name} - ${item.kcal}`;
+            resultList.appendChild(li);
+          });
+          calorieTotal.innerText = `총 예상 칼로리: ${total}kcal`;
+          exerciseSuggestion.innerText = getExerciseSuggestion(total);
+          resultSection.style.display = 'block';
+        })
+        .catch(err => {
+          loadingDiv.style.display = 'none';
+          alert("AI 인식에 실패했습니다: " + err);
         });
-        calorieTotal.innerText = `총 예상 칼로리: ${total}kcal`;
-        exerciseSuggestion.innerText = getExerciseSuggestion(total);
-        resultSection.style.display = 'block';
-      })
-      .catch(err => {
-        loadingDiv.style.display = 'none';
-        alert("AI 인식에 실패했습니다: " + err);
-      });
+      };
+      img.src = ev.target.result;
     };
-    img.src = ev.target.result;
+    reader.readAsDataURL(file);
   };
-  reader.readAsDataURL(file);
-};
+});
 
 // Gemini 결과 파싱
 function parseGeminiResult(responseText) {
