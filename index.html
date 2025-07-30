@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>칼로리M - 음식 칼로리 계산기</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- 넥슨체 웹폰트 적용 -->
+  <link href="https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2107@1.1/NEXONLv1Gothic.css" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <h1>칼로리M</h1>
+    <p>사진을 찍거나 업로드해서 칼로리를 계산해보세요!</p>
+    <div class="sample-grid">
+      <div class="sample-item">
+        <img src="images/menu1.jpg" alt="김치찌개">
+        <span>김치찌개</span>
+      </div>
+      <div class="sample-item">
+        <img src="images/menu2.jpg" alt="스파게티">
+        <span>스파게티</span>
+      </div>
+      <div class="sample-item">
+        <img src="images/menu3.jpg" alt="햄버거">
+        <span>햄버거</span>
+      </div>
+      <div class="sample-item">
+        <img src="images/menu4.jpg" alt="샌드위치">
+        <span>샌드위치</span>
+      </div>
+    </div>
+    <div class="action-buttons">
+      <button id="camera-btn">📷 사진 촬영</button>
+      <button id="gallery-btn">📁 갤러리 선택</button>
+      <input type="file" id="file-input" accept="image/*" capture="environment" style="display:none;">
+    </div>
+    <div id="preview-section" style="display:none;">
+      <h2>업로드된 사진 미리보기</h2>
+      <canvas id="preview-canvas"></canvas>
+    </div>
+    <div id="loading" style="display:none; text-align:center; margin:20px 0;">AI 분석 중입니다...</div>
+    <div id="result-section" style="display:none;">
+      <h2>인식 결과</h2>
+      <ul id="result-list"></ul>
+      <div id="calorie-total"></div>
+      <div id="exercise-suggestion"></div>
+      <button id="copy-btn">결과 복사</button>
+      <button id="retry-btn">다시 촬영하기</button>
+    </div>
+    <p style="font-size:0.9em; color:#888; text-align:center;">
+      새로고침 시 데이터가 초기화됩니다.
+    </p>
+  </div>
+  <script src="main.js"></script>
+</body>
+</html>
